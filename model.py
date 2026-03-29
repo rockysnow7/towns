@@ -48,7 +48,13 @@ class Edge(BaseModel):
     edge_data: EdgeData = Field(default_factory=NormalEdge)
 
 
-# users
+# users and friend requests
+class FriendRequest(BaseModel):
+    sender_id: str
+    sender_username: str | None = None
+    connector_node_id: str
+    connector_node_name: str | None = None
+
 class User(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -56,6 +62,11 @@ class User(BaseModel):
     username: str
     password_hash: str
     current_node_id: str | None = None
+    received_friend_requests: list[FriendRequest] = []
+
+class Friendship(BaseModel):
+    user_id_1: str
+    user_id_2: str
 
 
 # actions
