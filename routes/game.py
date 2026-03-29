@@ -98,7 +98,7 @@ def get_node_name(node: Node) -> str:
     """Get the name of the given node."""
 
     if node.name is not None:
-        return node.name
+        return f"[green]{node.name}[/green]"
 
     owner = db["users"].find_one({"_id": ObjectId(node.owner_id)})
     owner = User.model_validate(owner)

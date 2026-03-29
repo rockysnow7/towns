@@ -52,22 +52,38 @@ def choose_from_options(options: list[ListedOption]) -> ListedOption:
     chosen_option_index = Prompt.ask("Choose an option", choices=available_indices)
     return options[int(chosen_option_index) - 1]
 
-def choose_create_node_data() -> NodeData:
+def choose_create_node_data() -> tuple[NodeData, str | None, list[str]]:
     options = {
         "park": ParkNode,
         "street": StreetNode,
         "bedroom": BedroomNode,
     }
     keys = list(options.keys())
-    idx = survey.routines.select("Choose a node type: ", options=keys)
+    idx = survey.routines.select("Choose a space type: ", options=keys)
+    space_type = keys[idx]
+    node_data = options[space_type]()
 
-    return options[keys[idx]]()
+    name = Prompt.ask(f"Enter a name for the {space_type}", default=None)
+
+    display_name = name or space_type
+    adjectives = []
+    while True:
+        if adjectives:
+            text = f"Enter another adjective for the {display_name} (or leave blank to finish)"
+        else:
+            text = f"Enter an adjective for the {display_name} (or leave blank)"
+        adjective = Prompt.ask(text)
+        if not adjective:
+            break
+        adjectives.append(adjective)
+
+    return node_data, name, adjectives
 
 def action_from_option(option: ListedOption) -> Action:
     match option.action:
         case ActionCreateNodeGeneric():
-            node_data = choose_create_node_data()
-            return ActionCreateNode(node_data=node_data)
+            node_data, name, adjectives = choose_create_node_data()
+            return ActionCreateNode(node_data=node_data, name=name, adjectives=adjectives)
         case ActionGoToNode():
             return option.action
 
