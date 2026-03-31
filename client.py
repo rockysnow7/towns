@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
         mode = Prompt.ask(
             "Play at this location or manage friends",
-            choices=["play", "friends"],
+            choices=["play", "friends", "delete account"],
             default="play",
         )
         if mode == "friends":

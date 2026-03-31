@@ -121,25 +121,48 @@ def delete_account(
     user = db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not argon2.verify(request.password, user["password_hash"]):
+    user = User.model_validate(user)
+    if not argon2.verify(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid password")
 
     if request.pass_ownership_to_user_with_username:
+        # check that the target user exists and is not the same as the current user
+        if request.pass_ownership_to_user_with_username == user.username:
+            raise HTTPException(status_code=400, detail="You cannot pass ownership to yourself")
+
         target_user = db["users"].find_one({"username": request.pass_ownership_to_user_with_username})
         if not target_user:
             raise HTTPException(status_code=404, detail="Target user not found")
+        target_user = User.model_validate(target_user)
 
-        target_user_id = str(target_user["_id"])
-        db["nodes"].update_many({"owner_id": user_id}, {"$set": {"owner_id": target_user_id}})
-        db["items"].update_many({"owner_id": user_id}, {"$set": {"owner_id": target_user_id}})
+        # ensure that the target user is a friend of the current user
+        friendships = db["friendships"].find({"$or": [
+            {"user_id_1": user_id, "user_id_2": target_user.mongo_id},
+            {"user_id_1": target_user.mongo_id, "user_id_2": user_id},
+        ]})
+        if not friendships:
+            raise HTTPException(status_code=400, detail=f"You are not friends with the user {request.pass_ownership_to_user_with_username}")
+
+        # do all the database updates
+        db["nodes"].update_many({"owner_id": user_id}, {"$set": {"owner_id": target_user.mongo_id}})
+        db["items"].update_many({"owner_id": user_id}, {"$set": {"owner_id": target_user.mongo_id}})
 
         db["users"].delete_one({"_id": ObjectId(user_id)})
+        db["friendships"].delete_many({"$or": [
+            {"user_id_1": user_id},
+            {"user_id_2": user_id},
+        ]})
 
         return DeleteAccountResponse(
             message=f"Account deleted successfully. Ownership passed to {request.pass_ownership_to_user_with_username}.",
         )
 
+    # if not passing ownership to a friend, just delete the account and all its data
     db["users"].delete_one({"_id": ObjectId(user_id)})
+    db["friendships"].delete_many({"$or": [
+        {"user_id_1": user_id},
+        {"user_id_2": user_id},
+    ]})
 
     node_ids = db["nodes"].find({"owner_id": user_id}, {"_id": 1})
     node_ids = [node_id["_id"] for node_id in node_ids]
