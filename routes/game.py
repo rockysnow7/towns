@@ -2,7 +2,7 @@ from bson import ObjectId
 from db import db
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from model import Action, ActionCreateNode, Edge, Item, ItemData, ItemLocationUserInventory, ListedOption, Node, NormalEdge, User, ActionCreateNodeGeneric, ActionGoToNode
+from model import Action, ActionCreateNode, Edge, FriendRequest, Item, ItemData, ItemLocationUserInventory, ListedOption, Node, NormalEdge, User, ActionCreateNodeGeneric, ActionGoToNode
 from pydantic import BaseModel
 from rich import print
 from routes.users import get_current_user_id
@@ -33,7 +33,7 @@ def create_item(
         location=ItemLocationUserInventory(user_id=user_id),
         item_data=request.item_data,
     )
-    db["items"].insert_one(item.model_dump(mode="json"))
+    db["items"].insert_one(item.model_dump(mode="json", exclude_none=True))
     return CreateItemResponse(message="Item created successfully")
 
 
@@ -51,6 +51,7 @@ class GetStateResponse(BaseModel):
     current_node_name: str
     current_node_description: str
     options: list[ListedOption]
+    received_friend_requests: list[FriendRequest]
 
 def get_node_description(node: Node) -> str:
     """Get a description of the given node."""
@@ -120,7 +121,7 @@ def get_state(
                         node_id=edge.destination_node_id,
                         node_name=utils.get_node_name_from_id(edge.destination_node_id),
                     ),
-                    available=user_has_key_for_door(user_id, edge._id),
+                    available=user_has_key_for_door(user_id, edge.mongo_id),
                 ))
 
     # TODO: add other options
@@ -129,6 +130,7 @@ def get_state(
         current_node_name=current_node_name,
         current_node_description=current_node_description,
         options=options,
+        received_friend_requests=user.received_friend_requests,
     )
 
 

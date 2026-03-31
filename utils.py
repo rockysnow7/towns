@@ -16,7 +16,7 @@ def create_node(
         name=name,
         adjectives=adjectives,
     )
-    result = db["nodes"].insert_one(node.model_dump(mode="json"))
+    result = db["nodes"].insert_one(node.model_dump(mode="json", exclude_none=True))
     return str(result.inserted_id)
 
 def create_edge(source_node_id: str, destination_node_id: str, edge_data: EdgeData) -> str:
@@ -25,7 +25,7 @@ def create_edge(source_node_id: str, destination_node_id: str, edge_data: EdgeDa
         destination_node_id=destination_node_id,
         edge_data=edge_data,
     )
-    result = db["edges"].insert_one(edge.model_dump(mode="json"))
+    result = db["edges"].insert_one(edge.model_dump(mode="json", exclude_none=True))
     return str(result.inserted_id)
 
 def get_node_name(node: Node) -> str:
@@ -58,7 +58,6 @@ def validate_user_can_create_node_from_current(user_id: str, current_node_id: st
             status_code=403,
             detail="You cannot add a node to a node that you do not own",
         )
-
 
 def validate_edge_creation(user_id: str, source_node_id: str, destination_node_id: str) -> None:
     """Raise HTTPException if the user may not create an edge from source to destination."""

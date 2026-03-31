@@ -1,5 +1,18 @@
-from pydantic import BaseModel, ConfigDict, Field
+from bson import ObjectId as BSONObjectId
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from typing import Annotated, Literal
+
+
+def _coerce_mongo_id(v):
+    """Map BSON ObjectId to str; Pydantic ignores fields named _id, so we use mongo_id + alias."""
+    if v is None:
+        return None
+    if isinstance(v, BSONObjectId):
+        return str(v)
+    return v
+
+
+MongoIdStr = Annotated[str | None, BeforeValidator(_coerce_mongo_id)]
 
 
 # nodes
@@ -18,9 +31,9 @@ NodeData = Annotated[
 ]
 
 class Node(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
-    _id: str | None = None
+    mongo_id: MongoIdStr = Field(default=None, validation_alias="_id", serialization_alias="_id")
     owner_id: str | None = None
     node_data: NodeData
     name: str | None = None
@@ -40,9 +53,9 @@ EdgeData = Annotated[
 ]
 
 class Edge(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
-    _id: str | None = None
+    mongo_id: MongoIdStr = Field(default=None, validation_alias="_id", serialization_alias="_id")
     source_node_id: str
     destination_node_id: str
     edge_data: EdgeData = Field(default_factory=NormalEdge)
@@ -56,9 +69,9 @@ class FriendRequest(BaseModel):
     connector_node_name: str | None = None
 
 class User(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
-    _id: str | None = None
+    mongo_id: MongoIdStr = Field(default=None, validation_alias="_id", serialization_alias="_id")
     username: str
     password_hash: str
     current_node_id: str | None = None
@@ -127,9 +140,9 @@ ItemData = Annotated[
 ]
 
 class Item(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
-    _id: str | None = None
+    mongo_id: MongoIdStr = Field(default=None, validation_alias="_id", serialization_alias="_id")
     owner_id: str | None = None
     location: ItemLocation
     item_data: ItemData

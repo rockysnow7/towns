@@ -60,7 +60,7 @@ def register(request: RegisterRequest) -> RegisterResponse:
         username=request.username,
         password_hash=password_hash,
     )
-    result = db["users"].insert_one(user.model_dump(mode="json"))
+    result = db["users"].insert_one(user.model_dump(mode="json", exclude_none=True))
     user_id = str(result.inserted_id)
 
     token = create_token(user_id)
@@ -172,17 +172,17 @@ def create_friend_request(
 
     target_user = db["users"].find_one({"username": request.target_username})
     if not target_user:
-        raise HTTPException(status_code=404, detail="Target user not found")
+        raise HTTPException(status_code=404, detail=f"Target user {request.target_username} not found")
     target_user = User.model_validate(target_user)
 
     # check if the target user is the same as the user
-    if target_user._id == user_id:
+    if target_user.mongo_id == user_id:
         raise HTTPException(status_code=400, detail="You cannot send a friend request to yourself")
 
     # check if the target user is already friends with the user
     result = db["friendships"].find_one({"$or": [
-        {"user_id_1": user_id, "user_id_2": target_user._id},
-        {"user_id_1": target_user._id, "user_id_2": user_id},
+        {"user_id_1": user_id, "user_id_2": target_user.mongo_id},
+        {"user_id_1": target_user.mongo_id, "user_id_2": user_id},
     ]})
     if result:
         raise HTTPException(status_code=409, detail="You are already friends with this user")
@@ -192,7 +192,7 @@ def create_friend_request(
         raise HTTPException(status_code=409, detail="You have already sent a friend request to this user")
 
     # check if the target user has already sent a friend request to the user
-    if any(friend_request.sender_id == target_user._id for friend_request in user.received_friend_requests):
+    if any(friend_request.sender_id == target_user.mongo_id for friend_request in user.received_friend_requests):
         raise HTTPException(status_code=409, detail="This user has already sent you a friend request")
 
     connector_node = db["nodes"].find_one({"_id": ObjectId(request.connector_node_id)})
@@ -213,12 +213,12 @@ def create_friend_request(
         connector_node_name=connector_node_name,
     )
     db["users"].update_one(
-        {"_id": ObjectId(target_user._id)},
+        {"_id": ObjectId(target_user.mongo_id)},
         {"$push": {"received_friend_requests": friend_request.model_dump(mode="json")}},
     )
 
     return CreateFriendRequestResponse(
-        message=f"Friend request sent to {request.target_username}",
+        message=f"Friend request sent to {target_user.username}",
     )
 
 
@@ -282,7 +282,7 @@ def decide_friend_request(
                 user_id_1=user_id,
                 user_id_2=request.friend_request_sender_id,
             )
-            db["friendships"].insert_one(friendship.model_dump(mode="json"))
+            db["friendships"].insert_one(friendship.model_dump(mode="json", exclude_none=True))
 
             # delete the friend request
             db["users"].update_one(
