@@ -2,7 +2,7 @@ from db import db
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from model import Action, ActionCreateNode, ActionCreateNodeGeneric, ActionGoToNode, ListedOption
+from model import Action, ActionCreateNode, ActionCreateNodeGeneric, ActionGoToNode, BedroomNode, ListedOption, NodeData, ParkNode, StreetNode
 from pydantic import TypeAdapter
 from routes.game import DoActionRequest, GetStateResponse
 from routes.users import LoginRequest, LoginResponse
@@ -93,13 +93,6 @@ def display_format_string_with_tags(string: str) -> str:
 
 def display_format_option(option: ListedOption) -> dict:
     match option.action:
-        case ActionCreateNodeGeneric():
-            action = option.action.model_dump(mode="json")
-            return {
-                "display_text": "Create a new space.",
-                "available": option.available,
-                "hx_vals_json": json.dumps({"action": action}),
-            }
         case ActionGoToNode():
             node_name = display_format_string_with_tags(option.action.node_name)
             action = option.action.model_dump(mode="json")
@@ -130,7 +123,9 @@ def get_state_fragment(request: Request) -> HTMLResponse:
         )
 
     state = GetStateResponse.model_validate(response.json())
-    options = [display_format_option(option) for option in state.options]
+    can_create_node = ListedOption(action=ActionCreateNodeGeneric(), available=True) in state.options
+    options = [display_format_option(option) for option in state.options if not option.action == ActionCreateNodeGeneric()]
+
     return templates.TemplateResponse(
         request,
         "fragments/state.html",
@@ -139,6 +134,7 @@ def get_state_fragment(request: Request) -> HTMLResponse:
             "description": display_format_string_with_tags(state.current_node_description),
             "options": options,
             "friend_requests": state.received_friend_requests,
+            "can_create_node": can_create_node,
         },
     )
 
@@ -184,26 +180,76 @@ async def do_action(request: Request) -> HTMLResponse:
             "game.html",
             {"error": detail},
         )
+    return RedirectResponse(url="/game", status_code=303)
 
-    # print(state_response.text)
-    # state = GetStateResponse.model_validate(state_response.json())
-    # current_node_name = display_format_string_with_tags(state.current_node_name)
-    # current_node_description = display_format_string_with_tags(state.current_node_description)
-    # options = [display_format_option(option) for option in state.options]
-    # friend_requests = state.received_friend_requests
 
-    # return templates.TemplateResponse(
-    #     request,
-    #     "fragments/state.html",
-    #     {
-    #         "node_name": current_node_name,
-    #         "description": current_node_description,
-    #         "options": options,
-    #         "friend_requests": friend_requests,
-    #     },
-    # )
-
-    return RedirectResponse(
-        url="/game/state",
-        status_code=303,
+@router.get("/game/create-node", response_class=HTMLResponse)
+def create_node_page(request: Request) -> HTMLResponse:
+    token = request.cookies.get("token")
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.get(
+        f"{BASE_URL}/game/state",
+        headers=headers,
     )
+    if response.status_code != 200:
+        try:
+            detail = response.json()["detail"]
+        except ValueError:
+            detail = response.text
+        return templates.TemplateResponse(request, "game.html", {"error": detail})
+
+    state = GetStateResponse.model_validate(response.json())
+    return templates.TemplateResponse(
+        request,
+        "fragments/create-node.html",
+        {
+            "current_node_name": display_format_string_with_tags(state.current_node_name),
+            "current_node_description": display_format_string_with_tags(state.current_node_description),
+        },
+    )
+
+@router.post("/game/create-node", response_class=HTMLResponse)
+async def create_node_submit(request: Request) -> HTMLResponse:
+    token = request.cookies.get("token")
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    data = await request.form()
+
+    node_type = data["node-data"]
+    match node_type:
+        case "park":
+            node_data = ParkNode()
+        case "street":
+            node_data = StreetNode()
+        case "bedroom":
+            node_data = BedroomNode()
+        case _:
+            return templates.TemplateResponse(request, "game.html", {"error": "Invalid node type"})
+
+    name = data["name"]
+    adjectives = data["adjectives"].split(",")
+    adjectives = [adjective.strip() for adjective in adjectives if adjective.strip()]
+
+    create_node_action = ActionCreateNode(node_data=node_data, name=name, adjectives=adjectives)
+    do_action_request = DoActionRequest(action=create_node_action)
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{BASE_URL}/game/do-action",
+            json=do_action_request.model_dump(mode="json"),
+            headers=headers,
+        )
+        if response.status_code != 200:
+            try:
+                detail = response.json()["detail"]
+            except ValueError:
+                detail = response.text
+            return templates.TemplateResponse(
+                request,
+                "game.html",
+                {"error": detail},
+            )
+        return RedirectResponse(url="/game", status_code=303)

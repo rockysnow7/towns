@@ -7,6 +7,17 @@
     {% endif %}
 
     <ul>
+    {% if can_create_node %}
+    <li>
+        <a href="#"
+           hx-get="/game/create-node"
+           hx-target="#game-panel"
+           hx-swap="innerHTML">
+            Create a new space
+        </a>
+    </li>
+    {% endif %}
+
     {% for option in options %}
         {% if option.available %}
         <li>

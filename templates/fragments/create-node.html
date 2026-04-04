@@ -1,0 +1,20 @@
+<div id="game-panel">
+    <h2>{{ current_node_name|safe }}</h2>
+    <p>{{ current_node_description|safe }}</p>
+
+    <p>Create a new space.</p>
+
+    <form method="post" action="/game/create-node">
+        <label for="node-data">Space type: </label>
+        <select name="node-data" id="node-data">
+            <option value="park">Park</option>
+            <option value="street">Street</option>
+            <option value="bedroom">Bedroom</option>
+        </select><br>
+        <label for="name">Name: </label>
+        <input type="text" name="name" id="name"><br>
+        <label for="adjectives">Adjectives (separated by commas): </label>
+        <input type="text" name="adjectives" id="adjectives"><br>
+        <button type="submit">Create</button>
+    </form>
+</div>
