@@ -46,6 +46,30 @@ def get_node_name_from_id(node_id: str) -> str:
     node = Node.model_validate(node)
     return get_node_name(node)
 
+
+def allowed_destination_node_ids_for_user(user_id: str) -> set[str]:
+    """Node IDs the user may move onto: unowned, owned by them, or owned by a friend."""
+
+    friend_ids: list[str] = []
+    for doc in db["friendships"].find(
+        {"$or": [{"user_id_1": user_id}, {"user_id_2": user_id}]},
+    ):
+        friend_ids.append(doc["user_id_2"] if doc["user_id_1"] == user_id else doc["user_id_1"])
+
+    allowed_owners = {user_id, *friend_ids}
+    cursor = db["nodes"].find(
+        {
+            "$or": [
+                {"owner_id": {"$in": list(allowed_owners)}},
+                {"owner_id": None},
+                {"owner_id": {"$exists": False}},
+            ]
+        },
+        {"_id": 1},
+    )
+    return {str(doc["_id"]) for doc in cursor}
+
+
 def validate_user_can_create_node_from_current(user_id: str, current_node_id: str) -> None:
     """Raise HTTPException if the user may not create a new node attached from their current node."""
 

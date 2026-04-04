@@ -103,7 +103,11 @@ def get_state(
     ))
 
     # add movement options
-    edges_from_current_node = db["edges"].find({"source_node_id": user.current_node_id})
+    dest_ok = utils.allowed_destination_node_ids_for_user(user_id)
+    edges_from_current_node = db["edges"].find({
+        "source_node_id": user.current_node_id,
+        "destination_node_id": {"$in": list(dest_ok)},
+    })
     edges_from_current_node = [Edge.model_validate(edge) for edge in edges_from_current_node]
     for edge in edges_from_current_node:
         match edge.edge_data.edge_type:
@@ -178,10 +182,15 @@ def do_action(
             return DoActionResponse(message="Node created successfully")
 
         case ActionGoToNode():
-            can_go_to_node = db["edges"].find_one({
-                "source_node_id": user.current_node_id,
-                "destination_node_id": request.action.node_id,
-            }) is not None
+            dest_ok = utils.allowed_destination_node_ids_for_user(user_id)
+            can_go_to_node = (
+                request.action.node_id in dest_ok
+                and db["edges"].find_one({
+                    "source_node_id": user.current_node_id,
+                    "destination_node_id": request.action.node_id,
+                })
+                is not None
+            )
 
             if not can_go_to_node:
                 raise HTTPException(status_code=400, detail="You cannot move to this node")

@@ -1,0 +1,27 @@
+<div id="game-panel">
+    <h2>{{ node_name|safe }}</h2>
+    <p>{{ description|safe }}</p>
+
+    {% if friend_requests %}
+        <p>{{ friend_requests|length }} incoming friend request(s)</p>
+    {% endif %}
+
+    <ul>
+    {% for option in options %}
+        {% if option.available %}
+        <li>
+            <a href="#"
+               hx-post="/game/do-action"
+               hx-vals="{{ option.hx_vals_json | e }}"
+               hx-ext="json-enc"
+               hx-target="#game-panel"
+               hx-swap="outerHTML">
+                {{ option.display_text|safe }}
+            </a>
+        </li>
+        {% else %}
+        <li class="disabled">{{ option.display_text|safe }}</li>
+        {% endif %}
+    {% endfor %}
+    </ul>
+</div>
