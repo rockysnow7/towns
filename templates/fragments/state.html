@@ -1,11 +1,12 @@
 <div id="game-panel">
-    <h2>{{ node_name|safe }}</h2>
+    <h1>{{ node_name|safe }}</h1>
     <p>{{ description|safe }}</p>
 
     {% if friend_requests %}
-        <p>{{ friend_requests|length }} incoming friend request(s)</p>
+    <p>You have <a href="#">{{ friend_requests|length }} friend request{% if friend_requests|length != 1 %}s{% endif %}</a>.</p>
     {% endif %}
 
+    <hr>
     <ul>
     {% if can_create_node %}
     <li>
@@ -13,9 +14,11 @@
            hx-get="/game/create-node"
            hx-target="#game-panel"
            hx-swap="innerHTML">
-            Create a new space
+            Create a new space.
         </a>
     </li>
+    {% else %}
+    <li class="muted">Create a new space. (locked)</li>
     {% endif %}
 
     {% for option in options %}
@@ -31,8 +34,9 @@
             </a>
         </li>
         {% else %}
-        <li class="disabled">{{ option.display_text|safe }}</li>
+        <li class="muted">{{ option.display_text|safe }} (locked)</li>
         {% endif %}
     {% endfor %}
     </ul>
+    <hr>
 </div>

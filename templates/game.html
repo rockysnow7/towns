@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/ext/json-enc.js"></script>
     <title>Towns</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div id="game-panel" hx-get="/game/state" hx-trigger="load">
         {% if error %}
             <p role="alert">{{ error }}</p>
+        {% else %}
+            <p>Loading...</p>
         {% endif %}
-        <p>Loading...</p>
     </div>
+    {% if username %}
+    <footer class="muted">
+        <p>Logged in as {{ username }}. <a href="/logout">Log out</a></p>
+    </footer>
+    {% endif %}
 </body>
 </html>

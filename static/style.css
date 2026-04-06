@@ -1,0 +1,36 @@
+body {
+    font-family: serif;
+    background: #fff;
+    color: #000;
+    margin: 1em;
+    max-width: 40em;
+}
+
+a:link {
+    color: #00e;
+}
+
+a:visited {
+    color: #551a8b;
+}
+
+.muted { color: #666; }
+
+footer.muted {
+    margin-top: 1em;
+}
+
+footer.muted a:link,
+footer.muted a:visited {
+    color: #00e;
+}
+
+h1 {
+    font-size: 1.75em;
+    font-weight: bold;
+    margin: 0.67em 0;
+}
+
+ul {
+    padding-left: 2em;
+}

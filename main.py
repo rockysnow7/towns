@@ -1,4 +1,5 @@
 from fastapi import APIRouter, FastAPI
+from fastapi.staticfiles import StaticFiles
 from routes.game import router as game_router
 from routes.users import router as users_router
 from routes.web import router as web_router
@@ -11,6 +12,7 @@ api_router.include_router(users_router)
 api_router.include_router(game_router)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(api_router)
 app.include_router(web_router)
 

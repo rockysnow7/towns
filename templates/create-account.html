@@ -3,19 +3,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Log in | Towns</title>
+    <title>Create an account | Towns</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h1>Towns</h1>
-    <p>Log in :)</p>
+    <p>Create an account :)</p>
 
     <hr>
 
     {% if error %}
         <p role="alert">{{ error }}</p>
     {% endif %}
-    <form method="post" action="/login">
+    <form method="post" action="/create-account">
         <p>
             <label for="username">Username</label><br>
             <input id="username" name="username" type="text" autocomplete="username" required>
@@ -24,13 +24,13 @@
             <label for="password">Password</label><br>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
         </p>
-        <p><button type="submit">Log in</button></p>
+        <p><button type="submit">Create account</button></p>
     </form>
 
     <hr>
 
     <footer class="muted">
-        <p>Don't have an account? <a href="/create-account">Create an account</a></p>
+        <p>Already have an account? <a href="/login">Log in</a></p>
     </footer>
 </body>
 </html>
