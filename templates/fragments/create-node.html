@@ -4,27 +4,31 @@
 
     <hr>
 
-    <p>Create a new space.</p>
+    <p>Create a new space from here.</p>
 
-    <form method="post" action="/game/create-node">
-        <p>
-            <label for="node-data">Space type: </label><br>
-            <select name="node-data" id="node-data">
-                <option value="park">Park</option>
-                <option value="street">Street</option>
-                <option value="bedroom">Bedroom</option>
-            </select>
-        </p>
-        <p>
-            <label for="name">Name: </label><br>
-            <input type="text" name="name" id="name" required>
-        </p>
-        <p>
-            <label for="adjectives">Adjectives (optional, separated by commas): </label><br>
-            <input type="text" name="adjectives" id="adjectives" placeholder="beautiful, sunny, etc.">
-        </p>
-        <p><button type="submit">Create</button> or <a href="/game">go back</a></p>
-    </form>
+    <fieldset>
+        <legend>New space</legend>
+
+        <form method="post" action="/game/create-node">
+            <p>
+                <label for="node-data">Space type: </label><br>
+                <select name="node-data" id="node-data">
+                    <option value="park">Park</option>
+                    <option value="street">Street</option>
+                    <option value="bedroom">Bedroom</option>
+                </select>
+            </p>
+            <p>
+                <label for="name">Name: <span class="meta">(optional)</span></label><br>
+                <input type="text" name="name" id="name" size="30" maxlength="30">
+            </p>
+            <p>
+                <label for="adjectives">Adjectives: <span class="meta">(optional, separated by commas)</span></label><br>
+                <input type="text" name="adjectives" id="adjectives" placeholder="beautiful, sunny, etc." size="30", maxlength="50">
+            </p>
+            <p><button type="submit">Create</button> or <a class="link-no-memory" href="/game">go back</a></p>
+        </form>
+    </fieldset>
 
     <hr>
 </div>

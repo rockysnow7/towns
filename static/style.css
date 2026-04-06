@@ -16,12 +16,8 @@ a:visited {
 
 .muted { color: #666; }
 
-footer.muted {
-    margin-top: 1em;
-}
-
-footer.muted a:link,
-footer.muted a:visited {
+a:link.link-no-memory,
+a:visited.link-no-memory {
     color: #00e;
 }
 
@@ -33,4 +29,16 @@ h1 {
 
 ul {
     padding-left: 2em;
+}
+
+fieldset {
+    border: 1px solid #666;
+    padding-left: 1em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.meta {
+    font-size: 0.85em;
+    color: #666;
 }
